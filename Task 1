@@ -1,0 +1,77 @@
+TASK 1: DATA CLEANING AND PREPROCESSING
+
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# 1. Import the dataset and explore basic info
+df = pd.read_csv("/content/Titanic-Dataset.csv")
+df
+# Displays the columns in the dataset
+df.columns
+#Displays the first few rows of the DataFrame.
+df.head()
+# Displays a concise summary of the DataFrame, including data types and missing values.
+df.info()
+# Displays summary statistics for the DataFrame, such as mean, standard deviation, and quartiles.
+df.describe()
+# To know the missing values
+df.isnull().sum()
+
+# 2. Handling Missing Values
+
+# For Age, fill with median
+df["Age"] = df["Age"].fillna(df["Age"].median())
+
+# For Embarked, fill with mode
+df["Embarked"] = df["Embarked"].fillna(df["Embarked"].mode()[0])
+
+# For Cabin, drop the column due to too many missing values
+df.drop("Cabin", axis=1, inplace=True)
+
+df.isnull().sum()
+
+
+# 3. Convert categorical features into numerical
+# Sex: male=0, female=1
+df["Sex"] = df["Sex"].map({"male": 0, "female": 1})
+# Embarked: one-hot encoding
+df = pd.get_dummies(df, columns=["Embarked"], drop_first=True)
+
+# 4. Normalize/standardize numerical features
+from sklearn.preprocessing import StandardScaler
+
+num_features = ["Age", "Fare"]
+scaler = StandardScaler()
+df[num_features] = scaler.fit_transform(df[num_features])
+
+print(df["Age"].mean())
+print(df["Age"].std())
+print(df["Fare"].mean())
+print(df["Fare"].std())
+
+# 5. Visualize outliers using boxplots and remove them
+plt.figure(figsize=(10,4))
+for i, feature in enumerate(num_features):
+    plt.subplot(1,2,i+1)
+    sns.boxplot(y=df[feature])
+    plt.title(f"Boxplot of {feature}")
+plt.tight_layout()
+plt.show()
+
+# Remove outliers
+for feature in num_features:
+    Q1 = df[feature].quantile(0.25)
+    Q3 = df[feature].quantile(0.75)
+    IQR = Q3 - Q1
+    df = df[~((df[feature] < (Q1 - 1.5 * IQR)) | (df[feature] > (Q3 + 1.5 * IQR)))]
+
+# Visualize the data after removing outliers
+plt.figure(figsize=(10,4))
+for i, feature in enumerate(num_features):
+    plt.subplot(1,2,i+1)
+    sns.boxplot(y=df[feature])
+    plt.title(f"Boxplot of {feature} after removing outliers")
+plt.tight_layout()
+plt.show()
